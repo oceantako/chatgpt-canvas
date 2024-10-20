@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiating Lines Animation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="waveCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerHeight * 0.9;
+
+        const radiatingLines = []; // 放射状の線を格納する配列
+        const maxRadius = 300; // 最大の半径
+        const expansionSpeed = 2; // 線の拡張速度
+        const lineCount = 36; // 一度に広がる線の数（360度を何分割するか）
+
+        // 放射状の線のクラス
+        class RadiatingLine {
+            constructor(x, y) {
+                this.x = x; // 中心X
+                this.y = y; // 中心Y
+                this.radius = 0; // 現在の半径
+                this.opacity = 1; // 不透明度
+            }
+
+            update() {
+                this.radius += expansionSpeed; // 半径を増加
+                this.opacity -= 0.01; // 不透明度を減少
+                if (this.opacity < 0) {
+                    this.opacity = 0; // 最低不透明度を0に
+                }
+            }
+
+            draw() {
+                const angleStep = (2 * Math.PI) / lineCount; // 各線の角度間隔
+                ctx.strokeStyle = `rgba(0, 119, 190, ${this.opacity})`;
+                ctx.lineWidth = 2;
+
+                for (let i = 0; i < lineCount; i++) {
+                    const angle = i * angleStep; // 現在の線の角度
+                    const endX = this.x + this.radius * Math.cos(angle); // 終点X
+                    const endY = this.y + this.radius * Math.sin(angle); // 終点Y
+
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y); // 中心から開始
+                    ctx.lineTo(endX, endY); // 放射状の終点まで描画
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // マウスクリックで放射状の線を発生させる
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // 新しい放射状の線を追加
+            radiatingLines.push(new RadiatingLine(mouseX, mouseY));
+        });
+
+        // ランダムな位置に放射状の線を発生させる
+        function spawnRandomRadiatingLine() {
+            const randomX = Math.random() * canvas.width;
+            const randomY = Math.random() * canvas.height;
+
+            radiatingLines.push(new RadiatingLine(randomX, randomY));
+        }
+
+        // 一定間隔でランダムに放射状の線を生成
+        setInterval(spawnRandomRadiatingLine, 1000); // 1秒ごとにランダムな位置に放射状の線を生成
+
+        // アニメーションのループ
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
+
+            // すべての放射状の線を更新して描画
+            for (let i = 0; i < radiatingLines.length; i++) {
+                radiatingLines[i].update();
+                radiatingLines[i].draw();
+                // 不透明度が0になった放射状の線を削除
+                if (radiatingLines[i].opacity <= 0) {
+                    radiatingLines.splice(i, 1);
+                    i--; // インデックスを調整
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

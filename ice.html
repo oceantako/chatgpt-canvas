@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiating Lines with Individual Random Speed and Length</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="waveCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerHeight * 0.9;
+
+        const radiatingLines = []; // 放射状の線を格納する配列
+        const lineCount = 36; // 一度に広がる線の数（360度）
+
+        // 放射状の線のクラス
+        class RadiatingLine {
+            constructor(x, y) {
+                this.x = x; // 中心X
+                this.y = y; // 中心Y
+                this.radius = 0; // 現在の半径
+                this.opacity = 1; // 不透明度
+                this.lines = this.generateRandomLines(); // 各線の情報を生成
+            }
+
+            // ランダムな角度、スピード、長さを持つ線を生成
+            generateRandomLines() {
+                const lines = [];
+                for (let i = 0; i < lineCount; i++) {
+                    const angle = Math.random() * 2 * Math.PI; // 0〜360度のランダムな角度
+                    const speed = Math.random() * 2 + 1; // ランダムな拡張速度（1〜3）
+                    const maxRadius = Math.random() * 200 + 100; // ランダムな最大長さ（100〜300）
+                    lines.push({ angle, speed, maxRadius, currentRadius: 0 }); // それぞれの線を配列に追加
+                }
+                return lines;
+            }
+
+            update() {
+                this.opacity -= 0.01; // 不透明度を減少
+                if (this.opacity < 0) {
+                    this.opacity = 0; // 最低不透明度を0に
+                }
+
+                // 各線を更新
+                for (let line of this.lines) {
+                    line.currentRadius += line.speed; // 各線は独自の速度で半径が増加
+                    if (line.currentRadius > line.maxRadius) {
+                        line.currentRadius = line.maxRadius; // 最大長さを超えないようにする
+                    }
+                }
+            }
+
+            draw() {
+                ctx.strokeStyle = `rgba(0, 119, 190, ${this.opacity})`;
+                ctx.lineWidth = 2;
+
+                // 各線を描画
+                for (let line of this.lines) {
+                    const { angle, currentRadius } = line;
+                    const endX = this.x + currentRadius * Math.cos(angle); // 終点X
+                    const endY = this.y + currentRadius * Math.sin(angle); // 終点Y
+
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y); // 中心から開始
+                    ctx.lineTo(endX, endY); // 放射状の終点まで描画
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // マウスクリックで放射状の線を発生させる
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // 新しい放射状の線を追加
+            radiatingLines.push(new RadiatingLine(mouseX, mouseY));
+        });
+
+        // ランダムな位置に放射状の線を発生させる
+        function spawnRandomRadiatingLine() {
+            const randomX = Math.random() * canvas.width;
+            const randomY = Math.random() * canvas.height;
+
+            radiatingLines.push(new RadiatingLine(randomX, randomY));
+        }
+
+        // 一定間隔でランダムに放射状の線を生成
+        setInterval(spawnRandomRadiatingLine, 1000); // 1秒ごとにランダムな位置に放射状の線を生成
+
+        // アニメーションのループ
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
+
+            // すべての放射状の線を更新して描画
+            for (let i = 0; i < radiatingLines.length; i++) {
+                radiatingLines[i].update();
+                radiatingLines[i].draw();
+                // 不透明度が0になった放射状の線を削除
+                if (radiatingLines[i].opacity <= 0) {
+                    radiatingLines.splice(i, 1);
+                    i--; // インデックスを調整
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

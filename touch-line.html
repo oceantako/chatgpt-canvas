@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radial Expansion Animation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="waveCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerHeight * 0.9;
+
+        const lines = []; // 放射状の線を格納する配列
+        const maxLines = 200; // 最大線の数
+        const lineLength = 100; // 線の長さ
+
+        // 線のクラス
+        class Line {
+            constructor(x, y) {
+                this.x = x; // 中心X
+                this.y = y; // 中心Y
+                this.angle = Math.random() * Math.PI * 2; // ランダムな角度
+                this.length = 0; // 現在の長さ
+                this.opacity = 1; // 不透明度
+            }
+
+            update() {
+                this.length += 2; // 線の長さを増加
+                this.opacity -= 0.01; // 不透明度を減少
+                if (this.length > lineLength) {
+                    this.length = lineLength; // 最大長さを制限
+                }
+            }
+
+            draw() {
+                ctx.strokeStyle = `rgba(0, 119, 190, ${this.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + Math.cos(this.angle) * this.length, this.y + Math.sin(this.angle) * this.length);
+                ctx.stroke();
+            }
+        }
+
+        // マウスクリックで線を発生させる
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // 新しい線を追加
+            if (lines.length < maxLines) {
+                lines.push(new Line(mouseX, mouseY));
+            }
+        });
+
+        // アニメーションのループ
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
+
+            // すべての線を更新して描画
+            for (let i = 0; i < lines.length; i++) {
+                lines[i].update();
+                lines[i].draw();
+                // 不透明度が0になった線を削除
+                if (lines[i].opacity <= 0) {
+                    lines.splice(i, 1);
+                    i--; // インデックスを調整
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

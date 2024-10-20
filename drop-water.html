@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistic Wave Simulation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="waveCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerHeight * 0.9;
+
+        const width = canvas.width;
+        const height = canvas.height;
+        const damping = 0.99;  // 波の減衰率
+        const gridSize = 3;    // グリッドのサイズ（解像度）
+        
+        // 波のシミュレーション用の2次元配列
+        const cols = Math.floor(width / gridSize);
+        const rows = Math.floor(height / gridSize);
+        let current = [];
+        let previous = [];
+        let velocity = [];
+        
+        for (let i = 0; i < rows; i++) {
+            current[i] = [];
+            previous[i] = [];
+            velocity[i] = [];
+            for (let j = 0; j < cols; j++) {
+                current[i][j] = 0;
+                previous[i][j] = 0;
+                velocity[i][j] = 0;
+            }
+        }
+
+        // 波源を定義する関数（ランダムに波を生成）
+        function disturb(x, y, strength) {
+            if (x >= 0 && x < cols && y >= 0 && y < rows) {
+                current[y][x] = strength;
+            }
+        }
+
+        // シミュレーションのステップを更新する関数
+        function updateWave() {
+            for (let y = 1; y < rows - 1; y++) {
+                for (let x = 1; x < cols - 1; x++) {
+                    // 波動方程式による波の計算
+                    velocity[y][x] = (
+                        (previous[y - 1][x] + 
+                         previous[y + 1][x] + 
+                         previous[y][x - 1] + 
+                         previous[y][x + 1]) / 2
+                        - current[y][x]
+                    ) * damping;
+
+                    // 波の振幅を更新
+                    current[y][x] = velocity[y][x];
+                }
+            }
+
+            // 配列を入れ替える
+            let temp = previous;
+            previous = current;
+            current = temp;
+        }
+
+        // 波の描画関数
+        function drawWave() {
+            ctx.clearRect(0, 0, width, height);
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    // 波の高さに基づく色を設定
+                    const intensity = Math.floor(127 + current[y][x] * 128);
+                    const color = `rgb(${intensity}, ${intensity}, 255)`;
+
+                    // グリッドの各点を描画
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x * gridSize, y * gridSize, gridSize, gridSize);
+                }
+            }
+        }
+
+        // ランダムに波源を追加する
+        setInterval(() => {
+            const x = Math.floor(Math.random() * cols);
+            const y = Math.floor(Math.random() * rows);
+            disturb(x, y, Math.random() * 2);
+        }, 500);
+
+        // アニメーションのループ
+        function animate() {
+            updateWave();
+            drawWave();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

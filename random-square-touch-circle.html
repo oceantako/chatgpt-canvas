@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle and Random Squares Animation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="waveCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerHeight * 0.9;
+
+        const circles = []; // 円を格納する配列
+        const squares = []; // 正方形を格納する配列
+        const maxRadius = 200; // 最大円の半径
+        const maxSize = 100; // 最大正方形のサイズ
+        const expansionSpeed = 2; // 拡張速度
+        const rotationSpeed = 2; // 回転速度
+
+        // 円のクラス
+        class Circle {
+            constructor(x, y) {
+                this.x = x; // 中心X
+                this.y = y; // 中心Y
+                this.radius = 0; // 現在の半径
+                this.opacity = 1; // 不透明度
+            }
+
+            update() {
+                this.radius += expansionSpeed; // 半径を増加
+                this.opacity -= 0.01; // 不透明度を減少
+                if (this.opacity < 0) {
+                    this.opacity = 0; // 最低不透明度を0に
+                }
+            }
+
+            draw() {
+                ctx.strokeStyle = `rgba(0, 119, 190, ${this.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); // 円を描画
+                ctx.stroke();
+            }
+        }
+
+        // 正方形のクラス
+        class Square {
+            constructor(x, y) {
+                this.x = x; // 中心X
+                this.y = y; // 中心Y
+                this.size = 0; // 現在のサイズ
+                this.rotation = Math.random() * 360; // ランダムな回転角度
+                this.opacity = 1; // 不透明度
+            }
+
+            update() {
+                this.size += expansionSpeed; // サイズを増加
+                this.rotation += rotationSpeed; // 回転角度を増加
+                this.opacity -= 0.01; // 不透明度を減少
+                if (this.opacity < 0) {
+                    this.opacity = 0; // 最低不透明度を0に
+                }
+            }
+
+            draw() {
+                ctx.strokeStyle = `rgba(255, 69, 0, ${this.opacity})`; // 正方形の色
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+
+                // 正方形の四隅の座標を計算
+                const halfSize = this.size / 2;
+                const corners = [
+                    { x: -halfSize, y: -halfSize },
+                    { x: halfSize, y: -halfSize },
+                    { x: halfSize, y: halfSize },
+                    { x: -halfSize, y: halfSize }
+                ];
+
+                ctx.save(); // 現在の状態を保存
+                ctx.translate(this.x, this.y); // 中心を移動
+                ctx.rotate(this.rotation * Math.PI / 180); // 回転
+
+                // 正方形を描画
+                for (let i = 0; i < corners.length; i++) {
+                    const { x, y } = corners[i];
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.stroke();
+                ctx.restore(); // 保存した状態を復元
+            }
+        }
+
+        // マウスクリックで円を発生させる
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // 新しい円を追加
+            circles.push(new Circle(mouseX, mouseY));
+        });
+
+        // ランダムに正方形を発生させる
+        function generateRandomSquare() {
+            const randomX = Math.random() * canvas.width;
+            const randomY = Math.random() * canvas.height;
+            squares.push(new Square(randomX, randomY));
+        }
+
+        // アニメーションのループ
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
+
+            // ランダムに正方形を発生させる
+            if (Math.random() < 0.01) { // 5%の確率で正方形を生成
+                generateRandomSquare();
+            }
+
+            // すべての円を更新して描画
+            for (let i = 0; i < circles.length; i++) {
+                circles[i].update();
+                circles[i].draw();
+                // 不透明度が0になった円を削除
+                if (circles[i].opacity <= 0) {
+                    circles.splice(i, 1);
+                    i--; // インデックスを調整
+                }
+            }
+
+            // すべての正方形を更新して描画
+            for (let i = 0; i < squares.length; i++) {
+                squares[i].update();
+                squares[i].draw();
+                // 不透明度が0になった正方形を削除
+                if (squares[i].opacity <= 0) {
+                    squares.splice(i, 1);
+                    i--; // インデックスを調整
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
